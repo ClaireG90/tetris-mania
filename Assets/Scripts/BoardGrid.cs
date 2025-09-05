@@ -2,6 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_5_3_OR_NEWER
+using Vector2Int = UnityEngine.Vector2Int;
+#else
+using Vector2Int = System.ValueTuple<int, int>;
+#endif
+
 namespace TetrisMania
 {
     /// <summary>
@@ -16,6 +22,18 @@ namespace TetrisMania
 
         private bool[,] _grid = null!;
         private readonly PlacementValidator _validator = new PlacementValidator();
+#if UNITY_5_3_OR_NEWER
+        /// <summary>
+        /// Prefab used to represent a single block visually.
+        /// </summary>
+        public GameObject BlockPrefab = null!;
+#endif
+
+#if UNITY_5_3_OR_NEWER
+        private readonly Dictionary<Vector2Int, GameObject> _blockObjects = new Dictionary<Vector2Int, GameObject>();
+#else
+        private readonly Dictionary<Vector2Int, GameObject?> _blockObjects = new Dictionary<Vector2Int, GameObject?>();
+#endif
 
         /// <summary>
         /// Raised whenever one or more lines are cleared.
@@ -53,6 +71,24 @@ namespace TetrisMania
             }
 
             Array.Copy(snapshot, _grid, _grid.Length);
+        }
+
+        /// <summary>
+        /// Clears the board state and removes all spawned block objects.
+        /// </summary>
+        public void ClearAll()
+        {
+            _grid = new bool[Size, Size];
+#if UNITY_5_3_OR_NEWER
+            foreach (var obj in _blockObjects.Values)
+            {
+                if (obj != null)
+                {
+                    Destroy(obj);
+                }
+            }
+#endif
+            _blockObjects.Clear();
         }
 
         /// <summary>
@@ -127,11 +163,52 @@ namespace TetrisMania
             {
                 for (var x = 0; x < shape.Cells.GetLength(1); x++)
                 {
-                    if (shape.Cells[y, x])
+                    if (!shape.Cells[y, x])
                     {
-                        _grid[startY + y, startX + x] = true;
+                        continue;
                     }
+
+                    var gridX = startX + x;
+                    var gridY = startY + y;
+                    _grid[gridY, gridX] = true;
+#if UNITY_5_3_OR_NEWER
+                    if (BlockPrefab != null)
+                    {
+                        var worldPos = new Vector3(gridX, -gridY, 0f);
+                        var obj = Instantiate(BlockPrefab, worldPos, Quaternion.identity);
+                        _blockObjects[Pos(gridX, gridY)] = obj;
+                    }
+#endif
                 }
+            }
+        }
+
+        private static Vector2Int Pos(int x, int y)
+        {
+#if UNITY_5_3_OR_NEWER
+            return new Vector2Int(x, y);
+#else
+            return (x, y);
+#endif
+        }
+
+        private void ClearBlock(int x, int y)
+        {
+            var key = Pos(x, y);
+            if (_blockObjects.TryGetValue(key, out var obj))
+            {
+#if UNITY_5_3_OR_NEWER
+                if (obj != null)
+                {
+                    var renderer = obj.GetComponent<SpriteRenderer>();
+                    if (renderer != null)
+                    {
+                        renderer.color = Color.yellow;
+                    }
+                    Destroy(obj);
+                }
+#endif
+                _blockObjects.Remove(key);
             }
         }
 
@@ -158,6 +235,7 @@ namespace TetrisMania
                     for (var x = 0; x < Size; x++)
                     {
                         _grid[y, x] = false;
+                        ClearBlock(x, y);
                     }
                 }
             }
@@ -181,6 +259,7 @@ namespace TetrisMania
                     for (var y = 0; y < Size; y++)
                     {
                         _grid[y, x] = false;
+                        ClearBlock(x, y);
                     }
                 }
             }

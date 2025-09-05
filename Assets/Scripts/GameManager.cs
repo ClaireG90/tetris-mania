@@ -38,7 +38,7 @@ namespace TetrisMania
             Board.LinesCleared -= HandleLinesCleared;
             Board.LinesCleared += HandleLinesCleared;
 
-            Board.SetSnapshot(new bool[BoardGrid.Size, BoardGrid.Size]);
+            Board.ClearAll();
             Score.ResetScore();
             Spawner.GenerateOffer();
             IsGameOver = false;
@@ -46,6 +46,7 @@ namespace TetrisMania
             UI.SetScore(0);
             UI.ShowGameOver(false);
             UI.ShowRevive(false);
+            UI.Initialize(this);
 
             SaveSystem.SessionsCount = SaveSystem.SessionsCount + 1;
             AnalyticsStub.RunStarted();
@@ -87,6 +88,7 @@ namespace TetrisMania
                 IsGameOver = false;
                 Spawner.GenerateOffer();
                 UI.ShowGameOver(false);
+                UI.ShowRevive(false);
                 AnalyticsStub.ReviveSuccess();
             }
         }
