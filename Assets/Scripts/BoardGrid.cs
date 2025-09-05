@@ -43,11 +43,6 @@ namespace TetrisMania
         public event Action<int>? LinesCleared;
 
         /// <summary>
-        /// Gets the player's score.
-        /// </summary>
-        public int Score { get; private set; }
-
-        /// <summary>
         /// Attempts to place a shape at the specified board coordinates.
         /// </summary>
         /// <param name="shape">Shape to place.</param>
@@ -70,7 +65,6 @@ namespace TetrisMania
             var cleared = ClearLines();
             if (cleared > 0)
             {
-                Score += cleared * 100;
                 LinesCleared?.Invoke(cleared);
             }
 
