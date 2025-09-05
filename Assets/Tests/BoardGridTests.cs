@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using TetrisMania;
+using UnityEngine;
 
 namespace TetrisMania.Tests
 {
@@ -9,7 +10,7 @@ namespace TetrisMania.Tests
         [Test]
         public void ClearsFullRowAndColumn()
         {
-            var board = new BoardGrid();
+            var board = new GameObject().AddComponent<BoardGrid>();
             var clearedTotal = 0;
             board.LinesCleared += c => clearedTotal += c;
 
@@ -33,8 +34,8 @@ namespace TetrisMania.Tests
         [Test]
         public void DetectsGameOverWhenNoValidPlacements()
         {
-            var board = new BoardGrid();
-            var spawner = new PieceSpawner();
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var spawner = new GameObject().AddComponent<PieceSpawner>();
 
             var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
             for (var y = 0; y < BoardGrid.Size; y++)
