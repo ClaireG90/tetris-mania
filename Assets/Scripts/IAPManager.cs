@@ -1,5 +1,3 @@
-using System;
-
 namespace TetrisMania
 {
     /// <summary>
@@ -7,22 +5,18 @@ namespace TetrisMania
     /// </summary>
     public class IAPManager : IIAPManager
     {
-        /// <summary>
-        /// Gets a value indicating whether the player owns the no-ads pack.
-        /// </summary>
-        public bool HasNoAds { get; private set; }
+        private bool _noAds;
 
-        /// <summary>
-        /// Simulates purchasing the no-ads pack.
-        /// </summary>
+        /// <inheritdoc />
+        public bool IsNoAdsPurchased() => _noAds;
+
+        /// <inheritdoc />
         public void PurchaseNoAds()
         {
-            HasNoAds = true;
+            _noAds = true;
         }
 
-        /// <summary>
-        /// Simulates purchasing the starter pack.
-        /// </summary>
+        /// <inheritdoc />
         public void PurchaseStarterPack()
         {
         }

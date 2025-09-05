@@ -5,27 +5,6 @@ using UnityEngine;
 namespace TetrisMania
 {
     /// <summary>
-    /// Represents a block shape composed of a grid of cells.
-    /// </summary>
-    public class BlockShape
-    {
-        /// <summary>
-        /// Gets the shape cells where <c>true</c> indicates an occupied block.
-        /// </summary>
-        public bool[,] Cells { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockShape"/> class.
-        /// </summary>
-        /// <param name="cells">Two dimensional array describing the shape.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="cells"/> is null.</exception>
-        public BlockShape(bool[,] cells)
-        {
-            Cells = cells ?? throw new ArgumentNullException(nameof(cells));
-        }
-    }
-
-    /// <summary>
     /// Manages the main 8x8 board grid, handling block placement and line clears.
     /// </summary>
     public class BoardGrid : MonoBehaviour
@@ -38,39 +17,50 @@ namespace TetrisMania
         private bool[,] _grid = null!;
         private readonly PlacementValidator _validator = new PlacementValidator();
 
+        /// <summary>
+        /// Raised whenever one or more lines are cleared.
+        /// </summary>
+        public event Action<int>? LinesCleared;
+
         private void Awake()
         {
             _grid = new bool[Size, Size];
         }
 
         /// <summary>
-        /// Resets the grid to an empty state.
+        /// Returns whether a specific cell is occupied.
         /// </summary>
-        public void ResetGrid()
+        public bool IsCellOccupied(int x, int y) => _grid[y, x];
+
+        /// <summary>
+        /// Gets a copy of the current board state.
+        /// </summary>
+        public bool[,] GetSnapshot()
         {
-            _grid = new bool[Size, Size];
+            var copy = new bool[Size, Size];
+            Array.Copy(_grid, copy, _grid.Length);
+            return copy;
         }
 
         /// <summary>
-        /// Raised whenever one or more lines are cleared.
+        /// Restores the board state from a snapshot.
         /// </summary>
-        public event Action<int>? LinesCleared;
-
-        /// <summary>
-        /// Attempts to place a shape at the specified board coordinates.
-        /// </summary>
-        /// <param name="shape">Shape to place.</param>
-        /// <param name="x">X-coordinate of the top-left position.</param>
-        /// <param name="y">Y-coordinate of the top-left position.</param>
-        /// <returns><c>true</c> if placement succeeded; otherwise, <c>false</c>.</returns>
-        public bool TryPlacePiece(BlockShape shape, int x, int y)
+        public void SetSnapshot(bool[,] snapshot)
         {
-            if (shape == null)
+            if (snapshot == null || snapshot.GetLength(0) != Size || snapshot.GetLength(1) != Size)
             {
-                return false;
+                return;
             }
 
-            if (!_validator.CanPlace(_grid, shape, x, y))
+            Array.Copy(snapshot, _grid, _grid.Length);
+        }
+
+        /// <summary>
+        /// Attempts to place a shape at the specified coordinates.
+        /// </summary>
+        public bool TryPlacePiece(BlockShape shape, int x, int y)
+        {
+            if (shape == null || !_validator.CanPlace(_grid, shape, x, y))
             {
                 return false;
             }
@@ -88,8 +78,6 @@ namespace TetrisMania
         /// <summary>
         /// Determines whether any of the provided shapes can be placed on the board.
         /// </summary>
-        /// <param name="shapes">Collection of shapes to test.</param>
-        /// <returns><c>true</c> if any shape fits; otherwise, <c>false</c>.</returns>
         public bool HasAnyValidPlacement(IEnumerable<BlockShape> shapes)
         {
             if (shapes == null)
@@ -120,14 +108,17 @@ namespace TetrisMania
         }
 
         /// <summary>
-        /// Returns whether a specific cell is occupied.
+        /// Fills the entire grid to leave no valid placements. Used for tests.
         /// </summary>
-        /// <param name="x">X-coordinate.</param>
-        /// <param name="y">Y-coordinate.</param>
-        /// <returns><c>true</c> if the cell contains a block; otherwise, <c>false</c>.</returns>
-        public bool IsCellOccupied(int x, int y)
+        public void DebugFillNoMovesLeft()
         {
-            return _grid[y, x];
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    _grid[y, x] = true;
+                }
+            }
         }
 
         private void PlaceShape(BlockShape shape, int startX, int startY)
@@ -148,7 +139,7 @@ namespace TetrisMania
         {
             var cleared = 0;
 
-            // Clear full rows
+            // rows
             for (var y = 0; y < Size; y++)
             {
                 var full = true;
@@ -171,7 +162,7 @@ namespace TetrisMania
                 }
             }
 
-            // Clear full columns
+            // columns
             for (var x = 0; x < Size; x++)
             {
                 var full = true;
@@ -196,6 +187,17 @@ namespace TetrisMania
 
             return cleared;
         }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = Color.gray;
+            for (var y = 0; y < Size; y++)
+            {
+                for (var x = 0; x < Size; x++)
+                {
+                    Gizmos.DrawWireCube(new Vector3(x, -y, 0), Vector3.one);
+                }
+            }
+        }
     }
 }
-

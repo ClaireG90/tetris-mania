@@ -1,123 +1,113 @@
-using System;
 using UnityEngine;
 
 namespace TetrisMania
 {
     /// <summary>
-    /// Coordinates core game flow including start, game over and restart.
+    /// Coordinates core game flow including new runs, game over and revives.
     /// </summary>
     public class GameManager : MonoBehaviour
     {
-        private BoardGrid _board = null!;
-        private PieceSpawner _spawner = null!;
-        private ScoreManager _scoreManager = null!;
-        private IAdManager? _adManager;
-        private bool _gameOver;
-        private bool _reviveUsed;
-
-        /// <summary>
-        /// Gets the current board grid.
-        /// </summary>
-        public BoardGrid Board => _board;
-
-        /// <summary>
-        /// Gets the piece spawner.
-        /// </summary>
-        public PieceSpawner Spawner => _spawner;
-
-        /// <summary>
-        /// Gets the score manager.
-        /// </summary>
-        public ScoreManager ScoreManager => _scoreManager;
+        public BoardGrid Board = null!;
+        public PieceSpawner Spawner = null!;
+        public ScoreManager Score = null!;
+        public UIController UI = null!;
+        public IAdManager? AdManager;
+        public IIAPManager? IapManager;
 
         /// <summary>
         /// Gets a value indicating whether the game is over.
         /// </summary>
-        public bool IsGameOver => _gameOver;
+        public bool IsGameOver { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether the game over panel is visible.
+        /// Gets a value indicating whether the revive has already been used this run.
         /// </summary>
-        public bool GameOverPanelVisible { get; private set; }
+        public bool ReviveUsed { get; private set; }
 
-        /// <summary>
-        /// Initializes this instance with required dependencies.
-        /// </summary>
-        /// <param name="board">Board grid component.</param>
-        /// <param name="spawner">Piece spawner component.</param>
-        /// <param name="scoreManager">Score manager component.</param>
-        /// <param name="adManager">Ad manager instance.</param>
-        public void Initialize(BoardGrid board, PieceSpawner spawner, ScoreManager scoreManager, IAdManager adManager)
+        private void HandleLinesCleared(int count)
         {
-            _board = board ?? throw new ArgumentNullException(nameof(board));
-            _spawner = spawner ?? throw new ArgumentNullException(nameof(spawner));
-            _scoreManager = scoreManager ?? throw new ArgumentNullException(nameof(scoreManager));
-            _adManager = adManager ?? throw new ArgumentNullException(nameof(adManager));
-            _board.LinesCleared += _scoreManager.OnLinesCleared;
+            Score.OnLinesCleared(count);
+            UI.SetScore(Score.Score);
         }
 
         /// <summary>
-        /// Starts a new game.
+        /// Starts a new run by clearing state and generating the first offer.
         /// </summary>
-        public void StartGame()
+        public void NewRun()
         {
-            if (_board == null || _scoreManager == null)
+            Board.LinesCleared -= HandleLinesCleared;
+            Board.LinesCleared += HandleLinesCleared;
+
+            Board.SetSnapshot(new bool[BoardGrid.Size, BoardGrid.Size]);
+            Score.ResetScore();
+            Spawner.GenerateOffer();
+            IsGameOver = false;
+            ReviveUsed = false;
+            UI.SetScore(0);
+            UI.ShowGameOver(false);
+            UI.ShowRevive(false);
+
+            SaveSystem.SessionsCount = SaveSystem.SessionsCount + 1;
+            AnalyticsStub.RunStarted();
+        }
+
+        /// <summary>
+        /// Checks if no valid moves remain and triggers game over.
+        /// </summary>
+        public void CheckForGameOver()
+        {
+            if (IsGameOver)
             {
                 return;
             }
 
-            _board.ResetGrid();
-            _scoreManager.Reset();
-            _gameOver = false;
-            _reviveUsed = false;
-            GameOverPanelVisible = false;
+            if (!Board.HasAnyValidPlacement(Spawner.CurrentOffer))
+            {
+                IsGameOver = true;
+                UI.ShowGameOver(true);
+                AnalyticsStub.GameOver(Score.Score, 0);
+                MaybeShowInterstitialOnGameOver();
+            }
         }
 
         /// <summary>
-        /// Checks for game over and displays the panel when no moves remain.
+        /// Attempts to revive the current run via a rewarded ad.
         /// </summary>
-        public void CheckGameOver()
+        public void TryReviveWithAd()
         {
-            if (_board == null || _spawner == null)
+            if (!IsGameOver || ReviveUsed || AdManager == null)
             {
                 return;
             }
 
-            if (!_board.HasAnyValidPlacement(_spawner.Shapes))
+            AnalyticsStub.ReviveShown();
+            if (AdManager.ShowRewardedAd())
             {
-                _gameOver = true;
-                GameOverPanelVisible = true;
+                ReviveUsed = true;
+                IsGameOver = false;
+                Spawner.GenerateOffer();
+                UI.ShowGameOver(false);
+                AnalyticsStub.ReviveSuccess();
             }
         }
 
         /// <summary>
-        /// Restarts the game from scratch.
+        /// Shows an interstitial ad on game over unless disabled by a purchase or session gate.
         /// </summary>
-        public void Restart()
+        public void MaybeShowInterstitialOnGameOver()
         {
-            StartGame();
-        }
-
-        /// <summary>
-        /// Attempts to revive the player via a rewarded ad.
-        /// </summary>
-        /// <returns><c>true</c> if the game resumed; otherwise, <c>false</c>.</returns>
-        public bool ReviveWithAd()
-        {
-            if (!_gameOver || _reviveUsed)
+            if (SaveSystem.SessionsCount < 3)
             {
-                return false;
+                return;
             }
 
-            if (_adManager != null && _adManager.ShowRewardedAd())
+            if (IapManager != null && IapManager.IsNoAdsPurchased())
             {
-                _gameOver = false;
-                GameOverPanelVisible = false;
-                _reviveUsed = true;
-                return true;
+                return;
             }
 
-            return false;
+            AdManager?.ShowInterstitialAd();
+            AnalyticsStub.InterstitialShown();
         }
     }
 }
