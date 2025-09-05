@@ -1,22 +1,20 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TetrisMania
 {
     /// <summary>
     /// Provides random block shapes for gameplay.
     /// </summary>
-    public class PieceSpawner
+    public class PieceSpawner : MonoBehaviour
     {
         private readonly Random _random = new Random();
-        private readonly List<BlockShape> _shapes;
+        private readonly List<BlockShape> _shapes = new List<BlockShape>();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PieceSpawner"/> class.
-        /// </summary>
-        public PieceSpawner()
+        private void Awake()
         {
-            _shapes = new List<BlockShape>
+            _shapes.AddRange(new List<BlockShape>
             {
                 // T shape
                 new BlockShape(new bool[,]
@@ -42,7 +40,7 @@ namespace TetrisMania
                 {
                     { true, true, true, true }
                 })
-            };
+            });
         }
 
         /// <summary>

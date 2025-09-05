@@ -1,28 +1,19 @@
 using System;
+using UnityEngine;
 
 namespace TetrisMania
 {
     /// <summary>
     /// Coordinates core game flow including start, game over and restart.
     /// </summary>
-    public class GameManager
+    public class GameManager : MonoBehaviour
     {
-        private readonly IAdManager _adManager;
-        private BoardGrid _board = new BoardGrid();
-        private PieceSpawner _spawner = new PieceSpawner();
-        private readonly ScoreManager _scoreManager = new ScoreManager();
+        private BoardGrid _board = null!;
+        private PieceSpawner _spawner = null!;
+        private ScoreManager _scoreManager = null!;
+        private IAdManager? _adManager;
         private bool _gameOver;
         private bool _reviveUsed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="GameManager"/> class.
-        /// </summary>
-        /// <param name="adManager">Ad system used for revives.</param>
-        public GameManager(IAdManager adManager)
-        {
-            _adManager = adManager ?? throw new ArgumentNullException(nameof(adManager));
-            _board.LinesCleared += _scoreManager.OnLinesCleared;
-        }
 
         /// <summary>
         /// Gets the current board grid.
@@ -50,13 +41,32 @@ namespace TetrisMania
         public bool GameOverPanelVisible { get; private set; }
 
         /// <summary>
+        /// Initializes this instance with required dependencies.
+        /// </summary>
+        /// <param name="board">Board grid component.</param>
+        /// <param name="spawner">Piece spawner component.</param>
+        /// <param name="scoreManager">Score manager component.</param>
+        /// <param name="adManager">Ad manager instance.</param>
+        public void Initialize(BoardGrid board, PieceSpawner spawner, ScoreManager scoreManager, IAdManager adManager)
+        {
+            _board = board ?? throw new ArgumentNullException(nameof(board));
+            _spawner = spawner ?? throw new ArgumentNullException(nameof(spawner));
+            _scoreManager = scoreManager ?? throw new ArgumentNullException(nameof(scoreManager));
+            _adManager = adManager ?? throw new ArgumentNullException(nameof(adManager));
+            _board.LinesCleared += _scoreManager.OnLinesCleared;
+        }
+
+        /// <summary>
         /// Starts a new game.
         /// </summary>
         public void StartGame()
         {
-            _board = new BoardGrid();
-            _board.LinesCleared += _scoreManager.OnLinesCleared;
-            _spawner = new PieceSpawner();
+            if (_board == null || _scoreManager == null)
+            {
+                return;
+            }
+
+            _board.ResetGrid();
             _scoreManager.Reset();
             _gameOver = false;
             _reviveUsed = false;
@@ -68,6 +78,11 @@ namespace TetrisMania
         /// </summary>
         public void CheckGameOver()
         {
+            if (_board == null || _spawner == null)
+            {
+                return;
+            }
+
             if (!_board.HasAnyValidPlacement(_spawner.Shapes))
             {
                 _gameOver = true;
@@ -94,7 +109,7 @@ namespace TetrisMania
                 return false;
             }
 
-            if (_adManager.ShowRewardedAd())
+            if (_adManager != null && _adManager.ShowRewardedAd())
             {
                 _gameOver = false;
                 GameOverPanelVisible = false;

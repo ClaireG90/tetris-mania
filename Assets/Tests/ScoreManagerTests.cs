@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using TetrisMania;
+using UnityEngine;
 
 namespace TetrisMania.Tests
 {
@@ -8,7 +9,7 @@ namespace TetrisMania.Tests
         [Test]
         public void AwardsPointsForSingleLine()
         {
-            var manager = new ScoreManager();
+            var manager = new GameObject().AddComponent<ScoreManager>();
             manager.OnLinesCleared(1);
             Assert.AreEqual(100, manager.Score);
         }
@@ -16,7 +17,7 @@ namespace TetrisMania.Tests
         [Test]
         public void AwardsBonusForMultipleLines()
         {
-            var manager = new ScoreManager();
+            var manager = new GameObject().AddComponent<ScoreManager>();
             manager.OnLinesCleared(2);
             Assert.AreEqual(250, manager.Score);
 
@@ -32,7 +33,7 @@ namespace TetrisMania.Tests
         [Test]
         public void IgnoresNonPositiveInput()
         {
-            var manager = new ScoreManager();
+            var manager = new GameObject().AddComponent<ScoreManager>();
             manager.OnLinesCleared(0);
             manager.OnLinesCleared(-1);
             Assert.AreEqual(0, manager.Score);

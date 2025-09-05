@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TetrisMania
 {
@@ -27,15 +28,28 @@ namespace TetrisMania
     /// <summary>
     /// Manages the main 8x8 board grid, handling block placement and line clears.
     /// </summary>
-    public class BoardGrid
+    public class BoardGrid : MonoBehaviour
     {
         /// <summary>
         /// Size of the board on each axis.
         /// </summary>
         public const int Size = 8;
 
-        private readonly bool[,] _grid = new bool[Size, Size];
+        private bool[,] _grid = null!;
         private readonly PlacementValidator _validator = new PlacementValidator();
+
+        private void Awake()
+        {
+            _grid = new bool[Size, Size];
+        }
+
+        /// <summary>
+        /// Resets the grid to an empty state.
+        /// </summary>
+        public void ResetGrid()
+        {
+            _grid = new bool[Size, Size];
+        }
 
         /// <summary>
         /// Raised whenever one or more lines are cleared.

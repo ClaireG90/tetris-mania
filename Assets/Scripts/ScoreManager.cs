@@ -1,9 +1,11 @@
+using UnityEngine;
+
 namespace TetrisMania
 {
     /// <summary>
     /// Handles player scoring based on cleared lines.
     /// </summary>
-    public class ScoreManager
+    public class ScoreManager : MonoBehaviour
     {
         private int _score;
 

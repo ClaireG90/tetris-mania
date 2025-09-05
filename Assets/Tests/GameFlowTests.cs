@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using TetrisMania;
+using UnityEngine;
 
 namespace TetrisMania.Tests
 {
@@ -32,7 +33,11 @@ namespace TetrisMania.Tests
         public void GameOver_Fires_WhenNoMovesRemain()
         {
             var adManager = new FakeAdManager();
-            var gameManager = new GameManager(adManager);
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var spawner = new GameObject().AddComponent<PieceSpawner>();
+            var score = new GameObject().AddComponent<ScoreManager>();
+            var gameManager = new GameObject().AddComponent<GameManager>();
+            gameManager.Initialize(board, spawner, score, adManager);
 
             var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
             for (var y = 0; y < BoardGrid.Size; y++)
@@ -55,7 +60,11 @@ namespace TetrisMania.Tests
         public void Revive_WithRewarded_ResumesPlay()
         {
             var adManager = new FakeAdManager();
-            var gameManager = new GameManager(adManager);
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var spawner = new GameObject().AddComponent<PieceSpawner>();
+            var score = new GameObject().AddComponent<ScoreManager>();
+            var gameManager = new GameObject().AddComponent<GameManager>();
+            gameManager.Initialize(board, spawner, score, adManager);
 
             var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
             for (var y = 0; y < BoardGrid.Size; y++)
@@ -81,7 +90,11 @@ namespace TetrisMania.Tests
         {
             var iapManager = new FakeIAPManager { HasNoAds = true };
             var adManager = new AdManager(iapManager);
-            var gameManager = new GameManager(adManager);
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var spawner = new GameObject().AddComponent<PieceSpawner>();
+            var score = new GameObject().AddComponent<ScoreManager>();
+            var gameManager = new GameObject().AddComponent<GameManager>();
+            gameManager.Initialize(board, spawner, score, adManager);
 
             var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
             for (var y = 0; y < BoardGrid.Size; y++)
