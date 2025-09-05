@@ -7,7 +7,7 @@ namespace TetrisMania
     /// </summary>
     public class GameManager
     {
-        private readonly AdManager _adManager;
+        private readonly IAdManager _adManager;
         private BoardGrid _board = new BoardGrid();
         private PieceSpawner _spawner = new PieceSpawner();
         private readonly ScoreManager _scoreManager = new ScoreManager();
@@ -18,7 +18,7 @@ namespace TetrisMania
         /// Initializes a new instance of the <see cref="GameManager"/> class.
         /// </summary>
         /// <param name="adManager">Ad system used for revives.</param>
-        public GameManager(AdManager adManager)
+        public GameManager(IAdManager adManager)
         {
             _adManager = adManager ?? throw new ArgumentNullException(nameof(adManager));
             _board.LinesCleared += _scoreManager.OnLinesCleared;
