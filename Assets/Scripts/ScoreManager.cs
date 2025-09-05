@@ -17,7 +17,7 @@ namespace TetrisMania
         /// <summary>
         /// Resets the score to zero.
         /// </summary>
-        public void Reset()
+        public void ResetScore()
         {
             _score = 0;
         }
@@ -25,18 +25,18 @@ namespace TetrisMania
         /// <summary>
         /// Adds points for the specified number of cleared lines.
         /// </summary>
-        /// <param name="lines">Number of lines cleared in a single move.</param>
-        public void OnLinesCleared(int lines)
+        /// <param name="count">Number of lines cleared in a single move.</param>
+        public void OnLinesCleared(int count)
         {
-            if (lines <= 0)
+            if (count <= 0)
             {
                 return;
             }
 
-            _score += lines * 100;
-            if (lines > 1)
+            _score += count * 100;
+            if (count > 1)
             {
-                _score += 50 * (lines - 1);
+                _score += 50 * (count - 1);
             }
         }
     }

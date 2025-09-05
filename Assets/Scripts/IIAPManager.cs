@@ -1,15 +1,23 @@
-using System;
-
 namespace TetrisMania
 {
     /// <summary>
-    /// Interface for in-app purchase functionality.
+    /// Interface for in-app purchases.
     /// </summary>
     public interface IIAPManager
     {
         /// <summary>
-        /// Gets a value indicating whether the no-ads purchase was made.
+        /// Returns whether the no-ads pack has been purchased.
         /// </summary>
-        bool HasNoAds { get; }
+        bool IsNoAdsPurchased();
+
+        /// <summary>
+        /// Performs the no-ads purchase.
+        /// </summary>
+        void PurchaseNoAds();
+
+        /// <summary>
+        /// Performs the starter pack purchase.
+        /// </summary>
+        void PurchaseStarterPack();
     }
 }

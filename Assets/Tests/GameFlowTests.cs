@@ -8,109 +8,69 @@ namespace TetrisMania.Tests
     {
         private class FakeAdManager : IAdManager
         {
-            public bool RewardedShown { get; private set; }
-            public bool InterstitialShown { get; private set; }
-
-            public bool ShowRewardedAd()
-            {
-                RewardedShown = true;
-                return true;
-            }
-
-            public bool ShowInterstitialAd()
-            {
-                InterstitialShown = true;
-                return true;
-            }
+            public bool RewardedShown;
+            public bool InterstitialShown;
+            public bool ShowRewardedAd() { RewardedShown = true; return true; }
+            public void ShowInterstitialAd() { InterstitialShown = true; }
         }
 
-        private class FakeIAPManager : IIAPManager
+        private class FakeIapManager : IIAPManager
         {
-            public bool HasNoAds { get; set; }
+            public bool NoAds;
+            public bool IsNoAdsPurchased() => NoAds;
+            public void PurchaseNoAds() { NoAds = true; }
+            public void PurchaseStarterPack() { }
         }
 
-        [Test]
-        public void GameOver_Fires_WhenNoMovesRemain()
+        private GameManager CreateGame(FakeAdManager? ad = null, FakeIapManager? iap = null)
         {
-            var adManager = new FakeAdManager();
             var board = new GameObject().AddComponent<BoardGrid>();
             var spawner = new GameObject().AddComponent<PieceSpawner>();
             var score = new GameObject().AddComponent<ScoreManager>();
-            var gameManager = new GameObject().AddComponent<GameManager>();
-            gameManager.Initialize(board, spawner, score, adManager);
-
-            var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
-            for (var y = 0; y < BoardGrid.Size; y++)
-            {
-                for (var x = 0; x < BoardGrid.Size; x++)
-                {
-                    almostFull[y, x] = x != y;
-                }
-            }
-
-            var shape = new BlockShape(almostFull);
-            Assert.IsTrue(gameManager.Board.TryPlacePiece(shape, 0, 0));
-
-            gameManager.CheckGameOver();
-
-            Assert.IsTrue(gameManager.IsGameOver);
+            var ui = new GameObject().AddComponent<UIController>();
+            var gm = new GameObject().AddComponent<GameManager>();
+            gm.Board = board;
+            gm.Spawner = spawner;
+            gm.Score = score;
+            gm.UI = ui;
+            gm.AdManager = ad;
+            gm.IapManager = iap;
+            gm.NewRun();
+            return gm;
         }
 
         [Test]
-        public void Revive_WithRewarded_ResumesPlay()
+        public void GameOver_WhenNoMovesRemain()
         {
-            var adManager = new FakeAdManager();
-            var board = new GameObject().AddComponent<BoardGrid>();
-            var spawner = new GameObject().AddComponent<PieceSpawner>();
-            var score = new GameObject().AddComponent<ScoreManager>();
-            var gameManager = new GameObject().AddComponent<GameManager>();
-            gameManager.Initialize(board, spawner, score, adManager);
-
-            var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
-            for (var y = 0; y < BoardGrid.Size; y++)
-            {
-                for (var x = 0; x < BoardGrid.Size; x++)
-                {
-                    almostFull[y, x] = x != y;
-                }
-            }
-
-            var shape = new BlockShape(almostFull);
-            Assert.IsTrue(gameManager.Board.TryPlacePiece(shape, 0, 0));
-            gameManager.CheckGameOver();
-            Assert.IsTrue(gameManager.IsGameOver);
-
-            Assert.IsTrue(gameManager.ReviveWithAd());
-            Assert.IsFalse(gameManager.IsGameOver);
-            Assert.IsTrue(adManager.RewardedShown);
+            var gm = CreateGame(new FakeAdManager(), null);
+            gm.Board.DebugFillNoMovesLeft();
+            gm.CheckForGameOver();
+            Assert.IsTrue(gm.IsGameOver);
         }
 
         [Test]
-        public void NoAdsPurchase_DisablesInterstitials()
+        public void ReviveWithRewarded_ResetsGameOver()
         {
-            var iapManager = new FakeIAPManager { HasNoAds = true };
-            var adManager = new AdManager(iapManager);
-            var board = new GameObject().AddComponent<BoardGrid>();
-            var spawner = new GameObject().AddComponent<PieceSpawner>();
-            var score = new GameObject().AddComponent<ScoreManager>();
-            var gameManager = new GameObject().AddComponent<GameManager>();
-            gameManager.Initialize(board, spawner, score, adManager);
+            var ad = new FakeAdManager();
+            var gm = CreateGame(ad, null);
+            gm.Board.DebugFillNoMovesLeft();
+            gm.CheckForGameOver();
+            Assert.IsTrue(gm.IsGameOver);
+            gm.TryReviveWithAd();
+            Assert.IsFalse(gm.IsGameOver);
+            Assert.IsTrue(ad.RewardedShown);
+        }
 
-            var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
-            for (var y = 0; y < BoardGrid.Size; y++)
-            {
-                for (var x = 0; x < BoardGrid.Size; x++)
-                {
-                    almostFull[y, x] = x != y;
-                }
-            }
-
-            var shape = new BlockShape(almostFull);
-            Assert.IsTrue(gameManager.Board.TryPlacePiece(shape, 0, 0));
-            gameManager.CheckGameOver();
-            Assert.IsTrue(gameManager.IsGameOver);
-
-            Assert.IsFalse(adManager.ShowInterstitialAd());
+        [Test]
+        public void NoAds_DisablesInterstitialOnGameOver()
+        {
+            var ad = new FakeAdManager();
+            var iap = new FakeIapManager { NoAds = true };
+            SaveSystem.SessionsCount = 3; // ensure gate passes
+            var gm = CreateGame(ad, iap);
+            gm.Board.DebugFillNoMovesLeft();
+            gm.CheckForGameOver();
+            Assert.IsFalse(ad.InterstitialShown);
         }
     }
 }

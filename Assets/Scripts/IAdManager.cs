@@ -1,5 +1,3 @@
-using System;
-
 namespace TetrisMania
 {
     /// <summary>
@@ -8,15 +6,13 @@ namespace TetrisMania
     public interface IAdManager
     {
         /// <summary>
-        /// Displays a rewarded ad.
+        /// Displays a rewarded ad and returns true if completed successfully.
         /// </summary>
-        /// <returns>True if the ad was shown successfully.</returns>
         bool ShowRewardedAd();
 
         /// <summary>
-        /// Displays an interstitial ad if allowed.
+        /// Displays an interstitial ad.
         /// </summary>
-        /// <returns>True when an interstitial ad is shown.</returns>
-        bool ShowInterstitialAd();
+        void ShowInterstitialAd();
     }
 }

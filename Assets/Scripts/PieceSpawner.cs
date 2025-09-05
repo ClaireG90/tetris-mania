@@ -5,58 +5,84 @@ using UnityEngine;
 namespace TetrisMania
 {
     /// <summary>
-    /// Provides random block shapes for gameplay.
+    /// Generates and maintains the current set of offered block shapes.
     /// </summary>
     public class PieceSpawner : MonoBehaviour
     {
-        private readonly Random _random = new Random();
-        private readonly List<BlockShape> _shapes = new List<BlockShape>();
+        private readonly System.Random _random = new System.Random();
+        private readonly List<BlockShape> _shapeSet = new List<BlockShape>();
+        private readonly List<BlockShape> _currentOffer = new List<BlockShape>();
+
+        /// <summary>
+        /// Gets the shapes currently offered to the player.
+        /// </summary>
+        public IReadOnlyList<BlockShape> CurrentOffer => _currentOffer;
+
+        /// <summary>
+        /// Gets a value indicating whether the current offer has no shapes left.
+        /// </summary>
+        public bool OfferEmpty => _currentOffer.Count == 0;
 
         private void Awake()
         {
-            _shapes.AddRange(new List<BlockShape>
-            {
-                // T shape
-                new BlockShape(new bool[,]
-                {
-                    { true, true, true },
-                    { false, true, false }
-                }),
-                // L shape
-                new BlockShape(new bool[,]
-                {
-                    { true, false },
-                    { true, false },
-                    { true, true }
-                }),
-                // Square
-                new BlockShape(new bool[,]
-                {
-                    { true, true },
-                    { true, true }
-                }),
-                // Line
-                new BlockShape(new bool[,]
-                {
-                    { true, true, true, true }
-                })
-            });
+            // Curated basic shapes
+            _shapeSet.Add(new BlockShape(new bool[,] {{ true }})); // single block for tests
+            _shapeSet.Add(new BlockShape(new bool[,] {
+                { true, true },
+                { true, true }
+            }));
+            _shapeSet.Add(new BlockShape(new bool[,] {
+                { true, true, true },
+                { false, true, false }
+            }));
+            _shapeSet.Add(new BlockShape(new bool[,] {
+                { true, false },
+                { true, false },
+                { true, true }
+            }));
+            _shapeSet.Add(new BlockShape(new bool[,] {
+                { true, true, true, true }
+            }));
         }
 
         /// <summary>
-        /// Gets the available shapes.
+        /// Generates a new offer of three shapes.
         /// </summary>
-        public IReadOnlyList<BlockShape> Shapes => _shapes;
+        public void GenerateOffer()
+        {
+            _currentOffer.Clear();
+            for (var i = 0; i < 3; i++)
+            {
+                var index = _random.Next(_shapeSet.Count);
+                _currentOffer.Add(_shapeSet[index]);
+            }
+        }
 
         /// <summary>
-        /// Returns a random block shape.
+        /// Consumes the shape at the specified offer index.
         /// </summary>
-        /// <returns>A randomly selected <see cref="BlockShape"/>.</returns>
-        public BlockShape GetRandomShape()
+        /// <param name="index">Index of the shape to remove.</param>
+        public void ConsumeShape(int index)
         {
-            var index = _random.Next(_shapes.Count);
-            return _shapes[index];
+            if (index < 0 || index >= _currentOffer.Count)
+            {
+                return;
+            }
+
+            _currentOffer.RemoveAt(index);
+            if (OfferEmpty)
+            {
+                GenerateOffer();
+            }
+        }
+
+        /// <summary>
+        /// Returns true if any shape from the current offer fits on the provided board grid.
+        /// Convenience method used by tests.
+        /// </summary>
+        public bool AnyShapeFits(BoardGrid board)
+        {
+            return board.HasAnyValidPlacement(_currentOffer);
         }
     }
 }
-

@@ -1,5 +1,4 @@
 using NUnit.Framework;
-using System.Collections.Generic;
 using TetrisMania;
 using UnityEngine;
 
@@ -8,48 +7,41 @@ namespace TetrisMania.Tests
     public class BoardGridTests
     {
         [Test]
-        public void ClearsFullRowAndColumn()
+        public void PlacesShape_WhenValid()
         {
             var board = new GameObject().AddComponent<BoardGrid>();
-            var clearedTotal = 0;
-            board.LinesCleared += c => clearedTotal += c;
+            var shape = new BlockShape(new bool[,] {{ true }});
+            Assert.IsTrue(board.TryPlacePiece(shape, 0, 0));
+            Assert.IsTrue(board.IsCellOccupied(0, 0));
+        }
 
-            var rowShape = new BlockShape(new bool[,] {
-                { true, true, true, true, true, true, true, true }
-            });
+        [Test]
+        public void DoesNotPlace_WhenInvalid()
+        {
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var shape = new BlockShape(new bool[,] { { true, true } });
+            Assert.IsFalse(board.TryPlacePiece(shape, BoardGrid.Size - 1, 0));
+            Assert.IsFalse(board.IsCellOccupied(BoardGrid.Size - 1, 0));
+        }
 
+        [Test]
+        public void ClearsRowsAndColumns_Correctly()
+        {
+            var board = new GameObject().AddComponent<BoardGrid>();
+            var cleared = 0;
+            board.LinesCleared += c => cleared += c;
+
+            var rowShape = new BlockShape(new bool[,] { { true, true, true, true, true, true, true, true } });
             Assert.IsTrue(board.TryPlacePiece(rowShape, 0, 0));
+            Assert.AreEqual(1, cleared);
             Assert.IsFalse(board.IsCellOccupied(0, 0));
-            Assert.AreEqual(1, clearedTotal);
 
             var columnShape = new BlockShape(new bool[,] {
                 { true }, { true }, { true }, { true }, { true }, { true }, { true }, { true }
             });
-
             Assert.IsTrue(board.TryPlacePiece(columnShape, 0, 0));
+            Assert.AreEqual(2, cleared);
             Assert.IsFalse(board.IsCellOccupied(0, 0));
-            Assert.AreEqual(2, clearedTotal);
-        }
-
-        [Test]
-        public void DetectsGameOverWhenNoValidPlacements()
-        {
-            var board = new GameObject().AddComponent<BoardGrid>();
-            var spawner = new GameObject().AddComponent<PieceSpawner>();
-
-            var almostFull = new bool[BoardGrid.Size, BoardGrid.Size];
-            for (var y = 0; y < BoardGrid.Size; y++)
-            {
-                for (var x = 0; x < BoardGrid.Size; x++)
-                {
-                    almostFull[y, x] = x != y; // leave a diagonal of empty cells
-                }
-            }
-            var shape = new BlockShape(almostFull);
-            board.TryPlacePiece(shape, 0, 0);
-
-            Assert.IsFalse(board.HasAnyValidPlacement(spawner.Shapes));
         }
     }
 }
-
