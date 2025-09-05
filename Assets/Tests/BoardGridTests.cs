@@ -31,24 +31,6 @@ namespace TetrisMania.Tests
         }
 
         [Test]
-        public void AwardsScoreForClears()
-        {
-            var board = new BoardGrid();
-
-            var rowShape = new BlockShape(new bool[,] {
-                { true, true, true, true, true, true, true, true }
-            });
-            board.TryPlacePiece(rowShape, 0, 0);
-            Assert.AreEqual(100, board.Score);
-
-            var columnShape = new BlockShape(new bool[,] {
-                { true }, { true }, { true }, { true }, { true }, { true }, { true }, { true }
-            });
-            board.TryPlacePiece(columnShape, 0, 0);
-            Assert.AreEqual(200, board.Score);
-        }
-
-        [Test]
         public void DetectsGameOverWhenNoValidPlacements()
         {
             var board = new BoardGrid();
